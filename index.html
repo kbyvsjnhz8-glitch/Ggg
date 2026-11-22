@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#10212c" />
+<title>Буров Сити — прототип 0.1</title>
+<style>
+:root{color-scheme:dark;--safeT:env(safe-area-inset-top,0px);--safeB:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;overflow:hidden;background:#8dccf3;font-family:system-ui,-apple-system,Arial,sans-serif;color:white;touch-action:none}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.hud{pointer-events:none;position:fixed;inset:0;z-index:5}
+.panel{background:linear-gradient(140deg,rgba(16,29,41,.86),rgba(16,34,43,.66));border:1px solid rgba(255,255,255,.18);box-shadow:0 9px 26px rgba(0,0,0,.14);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#info{position:absolute;left:max(12px,env(safe-area-inset-left));top:calc(12px + var(--safeT));padding:12px 14px;border-radius:16px;max-width:min(58vw,340px)}
+#logo{font-weight:900;font-size:15px;letter-spacing:.08em;color:#ffe494;text-shadow:0 1px 1px #0009}
+#mission{font-weight:750;margin-top:7px;font-size:13px;line-height:1.35}
+#distance{font-size:11px;color:#b9d9df;margin-top:4px}
+#cash{display:inline-block;margin-top:8px;border-radius:7px;background:#246b44;padding:4px 8px;font-size:13px;font-weight:800}
+#mapBox{position:absolute;right:max(12px,env(safe-area-inset-right));top:calc(12px + var(--safeT));padding:7px;border-radius:16px;width:132px;height:132px;overflow:hidden}
+#map{width:116px;height:116px;display:block;border-radius:10px;background:#5b8c69}
+#hint{position:absolute;top:calc(157px + var(--safeT));left:50%;transform:translateX(-50%);padding:7px 12px;background:#132a39ae;border:1px solid #ffffff3b;border-radius:18px;font-size:11px;text-align:center;max-width:92vw;white-space:nowrap}
+#controls{position:absolute;bottom:calc(21px + var(--safeB));left:0;right:0;height:156px}
+#joystick{position:absolute;left:max(17px,env(safe-area-inset-left));bottom:5px;width:146px;height:146px;border-radius:50%;background:radial-gradient(circle,#fff2,#fff1 57%,#fff2 60%,#121e2b9c 100%);border:2px solid #ffffff67;box-shadow:inset 0 4px 18px #fff1,0 6px 26px #0005;pointer-events:auto;touch-action:none}
+#joystick:before,#joystick:after{content:"";position:absolute;pointer-events:none;background:#ffffff28}
+#joystick:before{width:2px;height:100%;left:calc(50% - 1px)}
+#joystick:after{height:2px;width:100%;top:calc(50% - 1px)}
+#stick{position:absolute;width:62px;height:62px;left:40px;top:40px;border-radius:50%;background:linear-gradient(145deg,#f1f5ffb0,#9bbad5a0);box-shadow:0 4px 14px #0d263566,inset 0 2px 6px #fff9;border:2px solid #ffffff9c;pointer-events:none}
+#actions{pointer-events:auto;position:absolute;right:max(13px,env(safe-area-inset-right));bottom:0;display:flex;align-items:flex-end;gap:8px}
+.button{width:76px;height:76px;border-radius:50%;border:2px solid #ffffff8c;color:#fff;text-shadow:0 1px 3px #0008;box-shadow:0 6px 18px #0007, inset 0 2px 13px #ffffff22;font-weight:900;font-size:11px;letter-spacing:.015em;touch-action:none}
+#runBtn{background:linear-gradient(145deg,#4383ca,#193f7a);width:72px;height:72px}
+#jumpBtn{background:linear-gradient(145deg,#f7a645,#bf5729)}
+#carBtn{background:linear-gradient(145deg,#51a778,#226c4e);display:none}
+.button:active{filter:brightness(1.3);transform:scale(.96)}
+#toast{position:absolute;left:50%;top:51%;transform:translate(-50%,-50%);background:#112a39d9;border:1px solid #ffdd907a;border-radius:16px;padding:13px 19px;text-align:center;opacity:0;transition:opacity .22s;font-weight:800;font-size:16px;max-width:85vw}
+#toast.show{opacity:1}
+#rotate{display:none;pointer-events:none;position:absolute;top:calc(146px + var(--safeT));right:10px;background:#142a3acc;padding:7px 9px;border-radius:8px;font-size:11px}
+#intro{position:fixed;inset:0;z-index:10;background:linear-gradient(165deg,#112938e9,#07121aeb);display:flex;align-items:center;justify-content:center;padding:22px}
+#intro.hidden{display:none}
+.introBox{width:min(450px,95vw);border:1px solid #ffffff3d;border-radius:23px;padding:25px 23px;text-align:center;background:#173b4e91;box-shadow:0 18px 80px #0005}
+.introBadge{font-size:48px}
+h1{margin:8px 0;font-size:clamp(27px,8vw,40px);line-height:1;color:#ffdc88}
+.sub{font-size:14px;line-height:1.6;color:#cde0e9;margin:15px 0 21px}
+.play{border:0;width:100%;border-radius:14px;padding:15px;font-size:17px;font-weight:850;background:linear-gradient(135deg,#ffc962,#f0933a);color:#22202a;box-shadow:0 7px 22px #0005}
+.tiny{color:#a7c4ce;font-size:11px;margin-top:15px}
+#error{display:none;position:fixed;inset:0;z-index:100;background:#15232b;padding:24px;line-height:1.7;overflow:auto}
+@media (max-width:730px) and (orientation:portrait){#mapBox{width:108px;height:108px}#map{width:92px;height:92px}#hint{top:calc(140px + var(--safeT));font-size:10px}#rotate{display:block;top:calc(178px + var(--safeT))}#joystick{width:127px;height:127px}#stick{left:32.5px;top:32.5px}#controls{height:136px}#actions{gap:5px}.button{width:63px;height:63px;font-size:10px}#runBtn{width:61px;height:61px}#info{padding:9px 10px}#logo{font-size:13px}#mission{font-size:11px}}
+@media (max-height:450px){#info{top:calc(6px + var(--safeT));padding:7px 10px}#cash{margin-top:3px}#mission{margin-top:3px}#mapBox{top:calc(6px + var(--safeT));width:110px;height:110px}#map{width:94px;height:94px}#hint{top:calc(8px + var(--safeT));font-size:10px;max-width:30vw;white-space:normal}#joystick{width:112px;height:112px}#stick{left:24px;top:24px}#controls{height:112px;bottom:calc(8px + var(--safeB))}.button{width:58px;height:58px;font-size:10px}#runBtn{width:58px;height:58px}}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="Трёхмерная игра Буров Сити"></canvas>
+<div class="hud">
+ <section class="panel" id="info"><div id="logo">🏙 БУРОВ СИТИ <span style="font-weight:500;font-size:10px;color:#b7c8d2">v0.1</span></div><div id="mission">Загрузка мира...</div><div id="distance"></div><div id="cash">0 ₽</div></section>
+ <div class="panel" id="mapBox"><canvas id="map" width="232" height="232" aria-label="Мини-карта города"></canvas></div>
+ <div id="hint">Двигай джойстик • Поверни камеру пальцем</div>
+ <div id="rotate">↻ Удобнее играть горизонтально</div>
+ <div id="toast" role="status"></div>
+ <div id="controls"><div id="joystick" aria-label="Сенсорный джойстик"><div id="stick"></div></div><div id="actions"><button id="carBtn" class="button" aria-label="Сесть в машину или выйти">🚗<br>СЕСТЬ</button><button id="runBtn" class="button" aria-label="Бежать">БЕГ</button><button id="jumpBtn" class="button" aria-label="Прыгнуть">ПРЫЖОК</button></div></div>
+</div>
+<div id="intro"><div class="introBox"><div class="introBadge">🚗🏙️</div><h1>БУРОВ СИТИ</h1><div style="font-size:12px;letter-spacing:.19em;color:#fbe1a9">ПЕРВЫЙ ИГРОВОЙ ПРОТОТИП</div><div class="sub">Исследуй 3D-город, садись в машину и собирай золотые метки. За каждое задание получай 100 ₽.<br><br>Слева — джойстик, справа — действия. Проведи пальцем по миру, чтобы повернуть камеру.</div><button id="playBtn" class="play">▶ НАЧАТЬ ИГРУ</button><div class="tiny">Работает в браузере • без регистрации и сервера</div></div></div>
+<div id="error"></div>
+<script>
+'use strict';
+(function(){
+const $=s=>document.querySelector(s), canvas=$('#game'), mini=$('#map'), ctx=mini.getContext('2d'), gl=canvas.getContext('webgl',{alpha:false,antialias:true,powerPreference:'low-power'});
+const showError=(s)=>{const e=$('#error');e.style.display='block';e.textContent=s};
+if(!gl){showError('На этом устройстве WebGL недоступен. Попробуй открыть игру в Safari или Chrome на другом устройстве.');return}
+const vshader=`attribute vec3 aPosition; attribute vec3 aNormal; attribute vec3 aColor; uniform mat4 uViewProj; uniform vec3 uEye; varying vec3 vColor; varying float vFog; void main(){vec4 world=vec4(aPosition,1.0);gl_Position=uViewProj*world;float light=max(0.0,dot(normalize(aNormal),normalize(vec3(-0.4,0.85,0.45))));vColor=aColor*(0.68+0.32*light);vFog=smoothstep(48.0,150.0,distance(uEye,aPosition));}`;
+const fshader=`precision mediump float;varying vec3 vColor; varying float vFog; void main(){gl_FragColor=vec4(mix(vColor,vec3(0.65,0.81,0.91),vFog),1.0);}`;
+function shader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s}
+let prog;
+try{prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vshader));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fshader));gl.linkProgram(prog);if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(prog));}catch(e){showError('Ошибка 3D-графики: '+e.message);return}
+gl.useProgram(prog);
+const loc={pos:gl.getAttribLocation(prog,'aPosition'),nor:gl.getAttribLocation(prog,'aNormal'),col:gl.getAttribLocation(prog,'aColor'),vp:gl.getUniformLocation(prog,'uViewProj'),eye:gl.getUniformLocation(prog,'uEye')};
+const staticBuffer=gl.createBuffer(), dynamicBuffer=gl.createBuffer();
+gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.disable(gl.CULL_FACE);gl.clearColor(.57,.79,.95,1);
+const staticMesh=[], collision=[], cars=[], people=[];
+const col=(h)=>{h=h.replace('#','');return [parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255]};
+const PAL={asphalt:col('414c59'),pavement:col('b9b6a9'),grass:col('6a9c6d'),green:col('56945b'),dgreen:col('376e54'),yellow:col('f8d36a'),white:col('f5f1e6'),glass:col('7baec3'),dark:col('35495c')};
+function quad(mesh,a,b,c,d,n,color){for(const p of [a,b,c,a,c,d])mesh.push(...p,...n,...color)}
+function box(mesh,cx,cy,cz,w,h,d,color,ang=0){const C=Math.cos(ang),S=Math.sin(ang),p=(x,y,z)=>[cx+x*C+z*S,cy+y,cz-x*S+z*C];const xx=w/2,yy=h/2,zz=d/2;const faces=[
+ [[-xx,-yy,zz],[xx,-yy,zz],[xx,yy,zz],[-xx,yy,zz],[0,0,1]],
+ [[xx,-yy,-zz],[-xx,-yy,-zz],[-xx,yy,-zz],[xx,yy,-zz],[0,0,-1]],
+ [[xx,-yy,zz],[xx,-yy,-zz],[xx,yy,-zz],[xx,yy,zz],[1,0,0]],
+ [[-xx,-yy,-zz],[-xx,-yy,zz],[-xx,yy,zz],[-xx,yy,-zz],[-1,0,0]],
+ [[-xx,yy,zz],[xx,yy,zz],[xx,yy,-zz],[-xx,yy,-zz],[0,1,0]],
+ [[-xx,-yy,-zz],[xx,-yy,-zz],[xx,-yy,zz],[-xx,-yy,zz],[0,-1,0]]];
+ for(const f of faces){let n=f[4],normal=[n[0]*C+n[2]*S,n[1],-n[0]*S+n[2]*C];quad(mesh,p(...f[0]),p(...f[1]),p(...f[2]),p(...f[3]),normal,color)}}
+function tri(mesh,a,b,c,color){let ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];let n=[uy*vz-uz*vy,uz*vx-ux*vz,ux*vy-uy*vx],l=Math.hypot(...n)||1;n=n.map(x=>x/l);for(const p of [a,b,c])mesh.push(...p,...n,...color)}
+function pyramid(mesh,x,y,z,r,h,color){const a=[x-r,y,z-r],b=[x+r,y,z-r],c=[x+r,y,z+r],d=[x-r,y,z+r],top=[x,y+h,z];tri(mesh,a,b,top,color);tri(mesh,b,c,top,color);tri(mesh,c,d,top,color);tri(mesh,d,a,top,color)}
+let seed=1712;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};const choose=arr=>arr[Math.floor(rnd()*arr.length)];
+const buildingColors=['#cf9f86','#a4b9c3','#d3bca1','#b2b0bb','#a6bca3','#d9ad9a','#91a8b5','#c6c3aa'].map(col);
+box(staticMesh,0,-.35,0,205,.65,205,PAL.grass);
+// Grid of roads: three east-west and three north-south.
+for(const v of [-36,0,36]){
+ box(staticMesh,v,.009,0,10,.03,174,PAL.asphalt);
+ box(staticMesh,0,.009,v,174,.03,10,PAL.asphalt);
+ for(let t=-82;t<=82;t+=12){box(staticMesh,v,.035,t,.14,.015,4,col('d1c39b'));box(staticMesh,t,.035,v,4,.015,.14,col('d1c39b'))}
+ for(const side of [-1,1]){box(staticMesh,v+side*5.8,.035,0,1.6,.06,174,PAL.pavement);box(staticMesh,0,.035,v+side*5.8,174,.06,1.6,PAL.pavement)}
+}
+// City blocks, buildings and a small park.
+for(const gx of [-54,-18,18,54])for(const gz of [-54,-18,18,54]){
+ let park=(gx===-18&&gz===18);
+ box(staticMesh,gx,.075,gz,27,.12,27,park?col('70ad78'):col('bcb9b0'));
+ if(park){
+   box(staticMesh,gx,.145,gz,2,.035,27,col('dbd2b8'));box(staticMesh,gx,.145,gz,27,.035,2,col('dbd2b8'));
+   for(let i=0;i<7;i++){let tx=gx+(rnd()-.5)*22,tz=gz+(rnd()-.5)*22;if(Math.abs(tx-gx)<1.6||Math.abs(tz-gz)<1.6)continue;tree(tx,tz,1+rnd()*.5)}
+   box(staticMesh,gx-4,.5,gz-2,2.5,.25,.75,col('9f6b47'));box(staticMesh,gx-4,.8,gz-2.35,2.5,.5,.18,col('9f6b47'));
+   continue
+ }
+ for(const ox of [-6.15,6.15])for(const oz of [-6.15,6.15]){
+   const bx=gx+ox,bz=gz+oz,w=8.8+rnd()*1.6,d=8.8+rnd()*1.6,height=7.5+Math.floor(rnd()*6)*3.2;
+   const wall=choose(buildingColors);box(staticMesh,bx,.13+height/2,bz,w,height,d,wall);
+   box(staticMesh,bx,.13+height+.3,bz,w+.55,.6,d+.55,col('617582'));
+   collision.push({x:bx,z:bz,hw:w/2+.35,hd:d/2+.35});
+   const floors=Math.max(2,Math.floor(height/3.1));
+   for(let f=0;f<floors;f++)for(let k=-1;k<=1;k++){
+      let wy=2+f*3.1,px=bx+k*w/4.3,pz=bz+k*d/4.3;
+      const windowShade=choose([col('8bc2ce'),col('557d8f'),col('bad0cf'),col('f4d69a')]);
+      box(staticMesh,px,wy,bz+d/2+.025,w/7,1.6,.09,windowShade);
+      box(staticMesh,px,wy,bz-d/2-.025,w/7,1.6,.09,windowShade);
+      box(staticMesh,bx+w/2+.025,wy,pz,.09,1.6,d/7,windowShade);
+      box(staticMesh,bx-w/2-.025,wy,pz,.09,1.6,d/7,windowShade);
+   }
+   if(rnd()>.6)box(staticMesh,bx,height+.7,bz,1.2,.65,1.2,col('515f67'));
+ }
+}
+function tree(x,z,s=1){box(staticMesh,x,1.1*s,z,.47*s,2.2*s,.47*s,col('76513e'));pyramid(staticMesh,x,1.1*s,z,2.2*s,3.8*s,col('38805a'));pyramid(staticMesh,x,3.1*s,z,1.75*s,3.2*s,col('4a9b61'));pyramid(staticMesh,x,4.8*s,z,1.15*s,2.6*s,col('57aa67'))}
+for(let i=0;i<25;i++){
+ let gx=choose([-36,0,36]),gz=choose([-36,0,36]);let along=rnd()>.5;
+ const x=along?gx+(rnd()>.5?7.3:-7.3):gx+(rnd()-.5)*45;
+ const z=along?gz+(rnd()-.5)*45:gz+(rnd()>.5?7.3:-7.3);
+ if(Math.hypot(x,z)<11)continue;
+ // Decorative trees on wide corners of sidewalks, not collidable.
+ if(rnd()>.35)tree(x,z,.6+rnd()*.3)
+}
+// Street lamps.
+for(let x of [-43,-29,-7,7,29,43])for(let z of [-43,-29,-7,7,29,43]){
+ if(Math.abs(x)>40&&Math.abs(z)>40&&rnd()>.4)continue;
+ box(staticMesh,x,2,z,.17,4,.17,col('455361'));
+ box(staticMesh,x+.5,4,z,1,.18,.2,col('455361'));
+ box(staticMesh,x+.95,3.88,z,.42,.13,.42,col('fff0a9'));
+}
+// Cars modelled from boxes; one of them is drivable.
+function addCar(mesh,c,shadow=true){const x=c.x,z=c.z,a=c.angle,body=c.color;
+ if(shadow)box(mesh,x,.08,z,2.2,.05,4.0,col('29363c'),a);
+ box(mesh,x,.65,z,1.86,.69,3.58,body,a);
+ box(mesh,x,1.22,z-.35,1.63,.68,1.82,col('4b8295'),a);
+ box(mesh,x,1.44,z-.35,1.68,.08,1.7,body,a);
+ for(const dx of [-1,1])for(const dz of [-1,1]){
+    const C=Math.cos(a),S=Math.sin(a),bx=dx*.88,bz=dz*1.04;
+    const wx=x+bx*C+bz*S,wz=z-bx*S+bz*C;
+    box(mesh,wx,.40,wz,.38,.65,.65,col('1d2730'),a)
+ }
+ box(mesh,x,.74,z+1.8,1.25,.2,.09,col('ffebc1'),a);
+ box(mesh,x,.75,z-1.8,1.28,.18,.08,col('b43e36'),a)
+}
+const myCar={x:3,z:7,angle:0,color:col('e69543')};cars.push(myCar);
+for(const [x,z,a,c] of [[-33,23,0,'#8c5fb4'],[33,-21,0,'#4e9aac'],[-19,-33,Math.PI/2,'#c45a58'],[20,33,Math.PI/2,'#c9b464'],[-40,-40,0,'#aab5bf']])cars.push({x,z,angle:a,color:col(c)});
+for(let i=1;i<cars.length;i++)addCar(staticMesh,cars[i]);
+for(let i=0;i<8;i++)people.push({x:choose([-36,0,36])+(rnd()-.5)*6,z:choose([-36,0,36])+(rnd()-.5)*35,phase:rnd()*6.28,shirt:choose([col('c75b52'),col('5d9bc0'),col('e3b45e'),col('9c7cc3')])});
+gl.bindBuffer(gl.ARRAY_BUFFER,staticBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(staticMesh),gl.STATIC_DRAW);
+const staticCount=staticMesh.length/9;staticMesh.length=0;
+function perspective(fov,aspect,near,far){let f=1/Math.tan(fov/2),nf=1/(near-far);return new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*nf,-1,0,0,2*far*near*nf,0])}
+function lookAt(e,t){let z=[e[0]-t[0],e[1]-t[1],e[2]-t[2]],len=Math.hypot(...z)||1;z=z.map(q=>q/len);let x=[z[2],0,-z[0]];len=Math.hypot(...x)||1;x=x.map(q=>q/len);let y=[z[1]*x[2]-z[2]*x[1],z[2]*x[0]-z[0]*x[2],z[0]*x[1]-z[1]*x[0]];return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-x.reduce((a,v,i)=>a+v*e[i],0),-y.reduce((a,v,i)=>a+v*e[i],0),-z.reduce((a,v,i)=>a+v*e[i],0),1])}
+function mul(A,B){let r=new Float32Array(16);for(let c=0;c<4;c++)for(let row=0;row<4;row++){let v=0;for(let k=0;k<4;k++)v+=A[k*4+row]*B[c*4+k];r[c*4+row]=v}return r}
+function meshDraw(buffer,count,usage){gl.bindBuffer(gl.ARRAY_BUFFER,buffer);if(usage)gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(usage),gl.DYNAMIC_DRAW);const stride=36;gl.enableVertexAttribArray(loc.pos);gl.enableVertexAttribArray(loc.nor);gl.enableVertexAttribArray(loc.col);gl.vertexAttribPointer(loc.pos,3,gl.FLOAT,false,stride,0);gl.vertexAttribPointer(loc.nor,3,gl.FLOAT,false,stride,12);gl.vertexAttribPointer(loc.col,3,gl.FLOAT,false,stride,24);gl.drawArrays(gl.TRIANGLES,0,count)}
+let p={x:0,z:0,angle:0,y:0,vy:0,run:false,inCar:false};let camYaw=0,eye=[0,7,-11],camX=0,camZ=-11,camHeight=7,started=false,missionIndex=0,cash=0,timer=0,showToastUntil=0;
+const missions=[{x:0,z:21,title:'Дойди до золотой метки'},{x:36,z:0,title:'Доберись до восточной улицы'},{x:-36,z:-36,title:'Найди последнюю метку'}];
+const joy={x:0,y:0,id:null};let runHeld=false,carAction=false,keys=new Set();
+function dist(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}
+function blocked(x,z,r=.6){if(Math.abs(x)>84-r||Math.abs(z)>84-r)return true;for(const b of collision)if(Math.abs(x-b.x)<b.hw+r&&Math.abs(z-b.z)<b.hd+r)return true;return false}
+function updateUI(){let target=missions[missionIndex];$('#cash').textContent=cash+' ₽';$('#mission').textContent=target?('📍 '+(missionIndex+1)+'/3 — '+target.title):'🏆 Все 3 задания выполнены!';$('#distance').textContent=target?'Осталось: '+Math.round(dist(p,target))+' м':'Свободная прогулка по городу';let carNear=!p.inCar&&dist(p,myCar)<3.2;$('#carBtn').style.display=(carNear||p.inCar)?'block':'none';$('#carBtn').innerHTML=p.inCar?'🚶<br>ВЫЙТИ':'🚗<br>СЕСТЬ';$('#runBtn').style.display=p.inCar?'none':'block';$('#jumpBtn').style.display=p.inCar?'none':'block'}
+function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');showToastUntil=performance.now()+1900}
+function carToggle(){if(p.inCar){let x=myCar.x+Math.cos(myCar.angle)*2.35,z=myCar.z-Math.sin(myCar.angle)*2.35;if(blocked(x,z)){x=myCar.x- Math.cos(myCar.angle)*2.35;z=myCar.z+Math.sin(myCar.angle)*2.35}if(blocked(x,z)){toast('Нет места, чтобы выйти');return}p.x=x;p.z=z;p.inCar=false;toast('Ты вышел из машины')}else if(dist(p,myCar)<3.2){p.inCar=true;p.x=myCar.x;p.z=myCar.z;camYaw=myCar.angle;toast('Машина: джойстик — газ и поворот')}updateUI()}
+$('#carBtn').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();carToggle()});
+$('#jumpBtn').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(p.y<=.001&&!p.inCar)p.vy=7.4});
+const runBtn=$('#runBtn');runBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();runHeld=true;try{runBtn.setPointerCapture(e.pointerId)}catch(_){}});for(const ev of ['pointerup','pointercancel','lostpointercapture'])runBtn.addEventListener(ev,()=>runHeld=false);
+const stick=$('#stick'),base=$('#joystick');function joyPoint(e){const r=base.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,R=r.width*.36,dx=e.clientX-cx,dy=e.clientY-cy,d=Math.max(1,Math.hypot(dx,dy)),k=Math.min(R,d)/d;joy.x=dx*k/R;joy.y=dy*k/R;stick.style.transform=`translate(${dx*k}px,${dy*k}px)`}
+base.addEventListener('pointerdown',e=>{e.preventDefault();joy.id=e.pointerId;try{base.setPointerCapture(e.pointerId)}catch(_){}joyPoint(e)});base.addEventListener('pointermove',e=>{if(joy.id===e.pointerId){e.preventDefault();joyPoint(e)}});const endJoy=e=>{if(joy.id===e.pointerId){joy.id=null;joy.x=joy.y=0;stick.style.transform='translate(0,0)'}};base.addEventListener('pointerup',endJoy);base.addEventListener('pointercancel',endJoy);base.addEventListener('lostpointercapture',endJoy);
+let dragId=null,dragX=0;
+canvas.addEventListener('pointerdown',e=>{if(!started)return;dragId=e.pointerId;dragX=e.clientX;try{canvas.setPointerCapture(e.pointerId)}catch(_){}});
+canvas.addEventListener('pointermove',e=>{if(dragId!==e.pointerId)return;let dx=e.clientX-dragX;dragX=e.clientX;camYaw-=dx*.0075});
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(ev,e=>{if(e.pointerId===dragId)dragId=null});
+window.addEventListener('keydown',e=>{let key=e.key.toLowerCase();keys.add(key);if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(key))e.preventDefault();if(key==='e'&&!e.repeat)carToggle();if(key===' '&&!e.repeat&&!p.inCar&&p.y<=.001)p.vy=7.4});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();joy.x=joy.y=0;stick.style.transform='translate(0,0)';runHeld=false});
+function keyAxis(pos,neg){return Number(keys.has(pos))-Number(keys.has(neg))}
+function tick(dt){timer+=dt;if(!started)return;
+ const jx=Math.max(-1,Math.min(1,joy.x+keyAxis('d','a')+keyAxis('arrowright','arrowleft'))), jy=Math.max(-1,Math.min(1,-joy.y+keyAxis('w','s')+keyAxis('arrowup','arrowdown')));
+ if(p.inCar){
+   if(Math.abs(jy)>.08){myCar.angle+=jx*dt*1.55*(jy>=0?1:-1);const speed=jy*15*dt;let nx=myCar.x+Math.sin(myCar.angle)*speed,nz=myCar.z+Math.cos(myCar.angle)*speed;if(!blocked(nx,nz,1.25)){myCar.x=nx;myCar.z=nz}}
+   else if(Math.abs(jx)>.08){myCar.angle+=jx*dt*.7}
+   p.x=myCar.x;p.z=myCar.z;p.angle=myCar.angle;
+ }else{
+   const f=Math.sin(camYaw),g=Math.cos(camYaw),mx=f*jy+g*jx,mz=g*jy-f*jx,m=Math.hypot(mx,mz),speed=(runHeld||keys.has('shift')?7.2:4.5);
+   if(m>.1){let dx=mx/m*speed*dt*Math.min(1,m),dz=mz/m*speed*dt*Math.min(1,m);if(!blocked(p.x+dx,p.z,p.y>.5?.4:.65))p.x+=dx;if(!blocked(p.x,p.z+dz,p.y>.5?.4:.65))p.z+=dz;let targetAngle=Math.atan2(mx,mz),diff=Math.atan2(Math.sin(targetAngle-p.angle),Math.cos(targetAngle-p.angle));p.angle+=diff*Math.min(1,dt*12)}
+   p.vy-=19*dt;p.y+=p.vy*dt;if(p.y<0){p.y=0;p.vy=0}
+ }
+ const target=missions[missionIndex];if(target&&dist(p,target)<2.7){missionIndex++;cash+=100;toast(missionIndex===3?'🏆 Все задания! +300 ₽ суммарно':'✅ Задание выполнено! +100 ₽')}
+ let cx=p.x-Math.sin(camYaw)*(p.inCar?12:9),cz=p.z-Math.cos(camYaw)*(p.inCar?12:9),cy=p.inCar?6.7:5.7;
+ let s=Math.min(1,dt*6);camX+=(cx-camX)*s;camZ+=(cz-camZ)*s;camHeight+=(cy-camHeight)*s;eye=[camX,camHeight,camZ];
+ updateUI();if(showToastUntil&&performance.now()>showToastUntil){$('#toast').classList.remove('show');showToastUntil=0}
+}
+function makeCharacter(m,x,y,z,a,shirt,phase=0){const bounce=Math.sin(phase)*.065;
+ box(m,x,y+.5+bounce,z,.64,1,.4,col('354052'),a);
+ box(m,x,y+1.25+bounce,z,.84,.83,.43,shirt,a);
+ box(m,x,y+1.91+bounce,z,.56,.57,.53,col('efbe92'),a);
+ box(m,x,y+2.23+bounce,z-.07,.59,.20,.53,col('493e38'),a);
+ for(const s of [-1,1]){
+  const C=Math.cos(a),S=Math.sin(a);let ax=s*.54,az=.015,px=x+ax*C+az*S,pz=z-ax*S+az*C;
+  box(m,px,y+1.15+bounce,pz,.28,.78,.3,shirt,a);
+  let lx=s*.21,lz=Math.sin(phase)*.16*s,wx=x+lx*C+lz*S,wz=z-lx*S+lz*C;
+  box(m,wx,y+.42+bounce,wz,.29,.80,.34,col('32445c'),a)
+ }
+}
+function dynamicWorld(){const m=[];
+ addCar(m,myCar);
+ if(!p.inCar)makeCharacter(m,p.x,p.y,p.z,p.angle,col('e2af4a'),timer*(Math.hypot(joy.x,joy.y)>.15||keys.size?12:1));
+ for(const [i,n] of people.entries()){
+    const v=timer*.48+n.phase,xx=n.x+Math.cos(v)*1.25,zz=n.z+Math.sin(v)*1.25;
+    makeCharacter(m,xx,0,zz,v+Math.PI/2,n.shirt,timer*7+i)
+ }
+ const target=missions[missionIndex];if(target){let h=2.2+Math.sin(timer*3)*.37;box(m,target.x,.12,target.z,2.8,.13,2.8,col('d5af57'));
+   box(m,target.x,h,target.z,.93,1.3,.93,col('ffcb54'),timer);
+   box(m,target.x,h+1,target.z,.26,.7,.26,col('ffefa9'),-timer);
+   for(const s of [-1,1]){box(m,target.x+s*.85,.07,target.z, .19,.1,.7,col('fff1a7'))}
+ }
+ return m}
+function render(){let w=window.innerWidth,h=window.innerHeight,dpr=Math.min(window.devicePixelRatio||1,2);let cw=Math.round(w*dpr),ch=Math.round(h*dpr);if(canvas.width!==cw||canvas.height!==ch){canvas.width=cw;canvas.height=ch}gl.viewport(0,0,cw,ch);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ let t=[p.x+Math.sin(camYaw)*(p.inCar?2.4:1.8),p.inCar?1.25:p.y+1.4,p.z+Math.cos(camYaw)*(p.inCar?2.4:1.8)];let VP=mul(perspective(66*Math.PI/180,cw/ch,.15,290),lookAt(eye,t));gl.uniformMatrix4fv(loc.vp,false,VP);gl.uniform3fv(loc.eye,eye);
+ meshDraw(staticBuffer,staticCount);let dyn=dynamicWorld();meshDraw(dynamicBuffer,dyn.length/9,dyn);
+ drawMap()}
+function drawMap(){const W=mini.width,scale=W/180,center=W/2;ctx.clearRect(0,0,W,W);ctx.fillStyle='#679875';ctx.fillRect(0,0,W,W);
+ ctx.fillStyle='#b9b6a9';for(const x of [-54,-18,18,54])for(const z of [-54,-18,18,54])ctx.fillRect(center+(x-13.5)*scale,center+(z-13.5)*scale,27*scale,27*scale);
+ ctx.fillStyle='#4c5865';for(let a of [-36,0,36]){ctx.fillRect(center+(a-5)*scale,0,10*scale,W);ctx.fillRect(0,center+(a-5)*scale,W,10*scale)}
+ ctx.fillStyle='#435b61';for(const b of collision){ctx.fillRect(center+(b.x-b.hw)*scale,center+(b.z-b.hd)*scale,b.hw*2*scale,b.hd*2*scale)}
+ if(missionIndex<3){const m=missions[missionIndex];ctx.fillStyle='#ffd361';ctx.beginPath();ctx.arc(center+m.x*scale,center+m.z*scale,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff4cf';ctx.lineWidth=2;ctx.stroke()}
+ ctx.save();ctx.translate(center+p.x*scale,center+p.z*scale);ctx.rotate(p.angle);ctx.fillStyle='#ffffff';ctx.beginPath();ctx.moveTo(0,9);ctx.lineTo(-7,-7);ctx.lineTo(7,-7);ctx.closePath();ctx.fill();ctx.restore();
+ ctx.strokeStyle='#ffffffbb';ctx.lineWidth=3;ctx.strokeRect(1.5,1.5,W-3,W-3)}
+let last=0;function loop(now){let dt=last?Math.min(.045,(now-last)/1000):.016;last=now;tick(dt);render();requestAnimationFrame(loop)}
+$('#playBtn').addEventListener('click',()=>{started=true;$('#intro').classList.add('hidden');toast('Найди золотую метку!');updateUI()});
+window.addEventListener('contextmenu',e=>e.preventDefault());
+updateUI();requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
